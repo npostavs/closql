@@ -5,6 +5,10 @@
 - Added new ~closql-object~ class slot ~closql-order-by~, which allows
   specify how the values of a related ~:closql-class~ slot are ordered.
 
+- Added new ~closql-object~ class slot ~closql-runtime-slots~, which
+  allows specifying slots whose value are not to be stored in the
+  database.
+
 - An initially unbound slot for which neither ~:closql-class~ nor
   ~:closql-columns~ is set caused an error in ~closql--resolve-slots~.
 

@@ -49,6 +49,7 @@
    (closql-foreign-key   :initform nil :allocation :class)
    (closql-foreign-table :initform nil :allocation :class)
    (closql-order-by      :initform nil :allocation :class)
+   (closql-runtime-slots :initform nil :allocation :class)
    (closql-database      :initform nil :initarg :closql-database))
   :abstract t)
 
@@ -149,6 +150,7 @@
 (defun closql--dset (db obj slot value)
   (let* ((table   (oref-default obj closql-table))
          (key     (oref-default obj closql-primary-key))
+         (runtime (oref-default obj closql-runtime-slots))
          (id      (closql--oref obj key))
          (class   (closql--slot-get obj slot :closql-class))
          (columns (closql--slot-get obj slot :closql-columns)))
@@ -203,7 +205,7 @@
                 (emacsql db [:insert-into $i1 :values $v2]
                          slot (vconcat (cons id elt2)))
                 (pop list2))))))))
-     (t
+     ((not (memq slot runtime))
       (emacsql db [:update $i1 :set (= $i2 $s3) :where (= $i4 $s5)]
                table slot
                (if (eq value eieio-unbound) 'eieio-unbound value)
@@ -300,6 +302,9 @@
                (pcase-let ((`(,class ,_db . ,values)
                             (closql--intern-unbound
                              (closql--coerce obj 'list))))
+                 (dolist (slot (oref-default obj closql-runtime-slots))
+                   (setf (nth (eieio--slot-name-index class slot) values)
+                         'eieio-unbound))
                  (vconcat (cons (closql--abbrev-class
                                  (if (fboundp 'record)
                                      (eieio--class-name class)
@@ -381,7 +386,8 @@
 (cl-defmethod closql--resolve-slots ((obj closql-object))
   (dolist (slot (eieio-class-slots (eieio--object-class obj)))
     (setq  slot (cl--slot-descriptor-name slot))
-    (when (and (not (slot-boundp obj slot))
+    (when (and (not (or (slot-boundp obj slot)
+                        (memq slot runtime-slots)))
                (or (closql--slot-get obj slot :closql-class)
                    (closql--slot-get obj slot :closql-columns)))
       (closql--oset obj slot (closql-oref obj slot)))))
