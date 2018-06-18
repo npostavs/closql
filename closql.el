@@ -302,9 +302,15 @@
                (pcase-let ((`(,class ,_db . ,values)
                             (closql--intern-unbound
                              (closql--coerce obj 'list))))
+                 ;; (message "--- %S" values)
                  (dolist (slot (oref-default obj closql-runtime-slots))
-                   (setf (nth (eieio--slot-name-index class slot) values)
-                         'eieio-unbound))
+                   ;; (message "  - %s %s" slot (eieio--slot-name-index class slot))
+                   (setf (nth (- (eieio--slot-name-index class slot)
+                                 2)
+                              values)
+                         'eieio-unbound
+                         ;;(symbol-name slot)
+                         ))
                  (vconcat (cons (closql--abbrev-class
                                  (if (fboundp 'record)
                                      (eieio--class-name class)
